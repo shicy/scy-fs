@@ -81,6 +81,10 @@ public class FileEntity extends BaseModel {
         return directory == 1;
     }
 
+    public short getDirectory() {
+        return directory;
+    }
+
     public void setDirectory(short directory) {
         this.directory = directory;
     }

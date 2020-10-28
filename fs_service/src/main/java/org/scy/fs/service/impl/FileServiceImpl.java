@@ -1,9 +1,11 @@
 package org.scy.fs.service.impl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.omg.CORBA.BAD_PARAM;
 import org.scy.common.ds.PageInfo;
 import org.scy.common.ds.query.Oper;
 import org.scy.common.ds.query.Selector;
+import org.scy.common.utils.StringUtilsEx;
 import org.scy.common.web.service.MybatisBaseService;
 import org.scy.fs.form.SearchForm;
 import org.scy.fs.mapper.FileEntityMapper;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -77,6 +80,7 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
 
     @Override
     public FileEntityModel add(String key, MultipartFile file, String fileName, String path) {
+
         return null;
     }
 
@@ -110,13 +114,25 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         return null;
     }
 
+    // ========================================================================
+    private String getUuid() {
+        String uuid = StringUtilsEx.getRandomString(32);
+        FileEntityModel model = entityMapper.getByUuid(uuid);
+        if (model != null)
+            return getUuid();
+        return uuid;
+    }
+
     private List<FileEntityModel> getByPath(String path) {
         List<FileEntityModel> entityModels = new ArrayList<FileEntityModel>();
         if (StringUtils.isNotBlank(path)) {
             int parentId = 0;
             String[] paths = StringUtils.split(path, "/");
             for (String _path: paths) {
-                FileEntityModel entityModel = entityMapper.getDirByName(_path.trim(), parentId);
+                _path = StringUtils.trimToEmpty(_path);
+                if (_path.length() == 0)
+                    continue;
+                FileEntityModel entityModel = entityMapper.getDirByName(_path, parentId);
                 if (entityModel == null)
                     break;
                 entityModels.add(entityModel);
@@ -124,6 +140,52 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
             }
         }
         return  entityModels;
+    }
+
+    private List<FileEntityModel> mkdirs(String key, String path) {
+        List<FileEntityModel> entityModels = new ArrayList<FileEntityModel>();
+        if (StringUtils.isNotBlank(path)) {
+            int parentId = 0;
+            String[] paths = StringUtils.split(path.trim(), "/");
+            for (String _path: paths) {
+                _path = StringUtils.trimToEmpty(_path);
+                if (_path.length() == 0)
+                    continue;
+                FileEntityModel entityModel = entityMapper.getDirByName(_path, parentId);
+                if (entityModel == null) {
+                    entityModel = new FileEntityModel();
+
+                }
+            }
+        }
+        return entityModels;
+    }
+
+    private FileEntityModel addDir(String key, String name, FileEntityModel parent) {
+        FileEntityModel model = new FileEntityModel();
+        model.setKey(key);
+        model.setName(name);
+        model.setDirectory((short)1);
+        model.setCreateDate(new Date());
+        if (parent != null) {
+            model.setParentId(parent.getId());
+            String parentIds = parent.getParentIds();
+            if (parentIds.length() > 0) {
+                String[] _parentIds = StringUtils.split(parentIds, ",");
+                _parentIds[_parentIds.length - 1] = "" + parent.getId();
+                parentIds = StringUtils.join(_parentIds, ",") + ",0";
+            }
+            else {
+                parentIds = "0," + parent.getId() + ",0";
+            }
+            model.setParentIds(parentIds);
+        }
+        else {
+            model.setParentId(0);
+            model.setParentIds("");
+        }
+        entityMapper.add(model);
+        return model;
     }
 
 }
