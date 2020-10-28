@@ -18,7 +18,10 @@ public class FileEntity extends BaseModel {
     private long size;
 
     // 所属目录编号
-    private int dirId;
+    private int parentId;
+
+    // 所有上级目录的编号集，格式如：0,2,34,124,0
+    private String parentIds;
 
     // 是否是目录
     private boolean directory;
@@ -47,12 +50,20 @@ public class FileEntity extends BaseModel {
         this.size = size;
     }
 
-    public int getDirId() {
-        return dirId;
+    public int getParentId() {
+        return parentId;
     }
 
-    public void setDirId(int dirId) {
-        this.dirId = dirId;
+    public void setParentId(int parentId) {
+        this.parentId = parentId;
+    }
+
+    public String getParentIds() {
+        return parentIds;
+    }
+
+    public void setParentIds(String parentIds) {
+        this.parentIds = parentIds;
     }
 
     public boolean isDirectory() {
