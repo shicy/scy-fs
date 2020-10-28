@@ -14,6 +14,9 @@ public class FileEntity extends BaseModel {
     // 文件名称
     private String name;
 
+    // 后缀名称
+    private String ext;
+
     // 文件大小
     private long size;
 
@@ -24,7 +27,7 @@ public class FileEntity extends BaseModel {
     private String parentIds;
 
     // 是否是目录
-    private boolean directory;
+    private short directory;
 
     public String getUuid() {
         return uuid;
@@ -40,6 +43,14 @@ public class FileEntity extends BaseModel {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getExt() {
+        return ext;
+    }
+
+    public void setExt(String ext) {
+        this.ext = ext;
     }
 
     public long getSize() {
@@ -67,10 +78,10 @@ public class FileEntity extends BaseModel {
     }
 
     public boolean isDirectory() {
-        return directory;
+        return directory == 1;
     }
 
-    public void setDirectory(boolean directory) {
+    public void setDirectory(short directory) {
         this.directory = directory;
     }
 

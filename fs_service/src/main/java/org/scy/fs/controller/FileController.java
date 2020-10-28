@@ -11,6 +11,7 @@ import org.scy.common.web.controller.HttpResult;
 import org.scy.fs.form.SearchForm;
 import org.scy.fs.manager.FileManager;
 import org.scy.fs.model.FileEntity;
+import org.scy.fs.model.FileEntityModel;
 import org.scy.fs.model.RegisterModel;
 import org.scy.fs.service.FileService;
 import org.scy.fs.service.RegisterService;
@@ -72,7 +73,7 @@ public class FileController extends BaseController {
 
         PageInfo pageInfo = PageInfo.create(request);
 
-        List<FileEntity> entities = fileService.find(key, form, pageInfo);
+        List<FileEntityModel> entities = fileService.find(key, form, pageInfo);
 
         return HttpResult.ok(entities, pageInfo);
     }
@@ -96,7 +97,7 @@ public class FileController extends BaseController {
             return HttpResult.error(Const.MSG_CODE_PARAMMISSING);
 
         String[] uuids = StringUtils.split(uuid, ",");
-        List<FileEntity> fileEntities = fileService.getByUuids(key, uuids);
+        List<FileEntityModel> fileEntities = fileService.getByUuids(key, uuids);
         return HttpResult.ok(fileEntities);
     }
 
@@ -161,7 +162,7 @@ public class FileController extends BaseController {
             String fileName = HttpUtilsEx.getStringValue(request, "fileName");
             if (StringUtils.isNotBlank(uuid)) {
                 String[] uuids = StringUtils.split(uuid.trim(), ",");
-                List<FileEntity> entities = fileService.getByUuids(key, uuids);
+                List<FileEntityModel> entities = fileService.getByUuids(key, uuids);
                 in = FileManager.stream(entities.toArray(new FileEntity[0]));
                 if (StringUtils.isBlank(fileName) && entities.size() > 0)
                     fileName = entities.get(0).getName();

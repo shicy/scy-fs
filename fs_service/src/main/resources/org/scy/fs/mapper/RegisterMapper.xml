@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scy.fs.mapper.RegisterMapper">
+
+    <!-- getById -->
+    <select id="getById" resultType="RegisterModel">
+        select * from `register` where id = #{id} and state > 0
+    </select>
+
+    <!-- getByKey -->
+    <select id="getByKey" resultType="RegisterModel">
+        select * from `register` where key = #{key} and state > 0 limit 1
+    </select>
+
+    <!-- add -->
+    <insert id="add" parameterType="RegisterModel" useGeneratedKeys="true" keyProperty="id">
+        insert into `register` (key, name, size, `limit`, state, createTime)
+        values (#{key}, #{name}, #{size}, #{limit}, #{state}, #{createTime})
+    </insert>
+
+    <!-- update -->
+    <update id="update" parameterType="RegisterModel">
+        update `register`
+        set key = #{key} name = #{name}, size = #{size}, `limit` = #{limit}, updateTime = #{updateTime}
+        where id = ${id}
+    </update>
+
+    <!-- delete -->
+    <update id="delete" parameterType="RegisterModel">
+        update `register` set state = 0 where id = #{id}
+    </update>
+
+    <!-- find -->
+    <select id="find" parameterType="org.scy.common.ds.query.Selector" resultType="RegisterModel">
+        select * from `register` ${where} ${group} ${order} ${limit}
+    </select>
+
+    <!-- countFind -->
+    <select id="countFind" parameterType="org.scy.common.ds.query.Selector" resultType="Integer">
+        select count(id) as count from `register` ${where} ${group}
+    </select>
+
+</mapper>

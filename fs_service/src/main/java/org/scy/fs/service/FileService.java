@@ -2,7 +2,7 @@ package org.scy.fs.service;
 
 import org.scy.common.ds.PageInfo;
 import org.scy.fs.form.SearchForm;
-import org.scy.fs.model.FileEntity;
+import org.scy.fs.model.FileEntityModel;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -19,7 +19,7 @@ public interface FileService {
      * @param uuid 要获取的文件唯一编号
      * @return 文件信息
      */
-    FileEntity getByUuid(String key, String uuid);
+    FileEntityModel getByUuid(String key, String uuid);
 
     /**
      * 获取文件信息
@@ -27,7 +27,7 @@ public interface FileService {
      * @param uuids 要获取的文件唯一编号集
      * @return 文件信息
      */
-    List<FileEntity> getByUuids(String key, String[] uuids);
+    List<FileEntityModel> getByUuids(String key, String[] uuids);
 
     /**
      * 查询
@@ -36,7 +36,7 @@ public interface FileService {
      * @param pageInfo 分页
      * @return 文件及目录信息
      */
-    List<FileEntity> find(String key, SearchForm form, PageInfo pageInfo);
+    List<FileEntityModel> find(String key, SearchForm form, PageInfo pageInfo);
 
     /**
      * 添加文件
@@ -46,7 +46,7 @@ public interface FileService {
      * @param path 存储路径
      * @return 文件实例
      */
-    FileEntity add(String key, MultipartFile file, String fileName, String path);
+    FileEntityModel add(String key, MultipartFile file, String fileName, String path);
 
     /**
      * 删除文件
@@ -54,7 +54,7 @@ public interface FileService {
      * @param uuid 要删除的文件唯一编号
      * @return 被删除的文件信息
      */
-    FileEntity delete(String key, String uuid);
+    FileEntityModel delete(String key, String uuid);
 
     /**
      * 删除文件
@@ -62,7 +62,7 @@ public interface FileService {
      * @param uuids 要删除的文件唯一编号集
      * @return 被删除的文件信息
      */
-    List<FileEntity> delete(String key, String[] uuids);
+    List<FileEntityModel> delete(String key, String[] uuids);
 
     /**
      * 删除目录
@@ -72,7 +72,7 @@ public interface FileService {
      * @param includeFile 为true时同时删除文件，否则如果存在文件将无法删除
      * @return 被删除的文件及目录信息
      */
-    List<FileEntity> deleteDir(String key, String path, boolean includeSubDir, boolean includeFile);
+    List<FileEntityModel> deleteDir(String key, String path, boolean includeSubDir, boolean includeFile);
 
     /**
      * 移动文件，将文件移动到另一个目录下
@@ -81,7 +81,7 @@ public interface FileService {
      * @param toPath 移动到该目录下
      * @return 移动后的文件实例
      */
-    FileEntity moveFile(String key, String uuid, String toPath);
+    FileEntityModel moveFile(String key, String uuid, String toPath);
 
     /**
      * 移动文件，将文件移动到另一个目录下
@@ -90,7 +90,7 @@ public interface FileService {
      * @param toPath 移动到该目录下
      * @return 被移动的文件信息
      */
-    List<FileEntity> moveFiles(String key, String[] uuids, String toPath);
+    List<FileEntityModel> moveFiles(String key, String[] uuids, String toPath);
 
     /**
      * 移动目录，将目录移到另一个目录下
@@ -99,6 +99,6 @@ public interface FileService {
      * @param toPath 移动到该目录下
      * @return 移动后的目录实例
      */
-    FileEntity moveDir(String key, String fromPath, String toPath);
+    FileEntityModel moveDir(String key, String fromPath, String toPath);
 
 }
