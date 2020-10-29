@@ -1,2 +1,4 @@
 *.iml
 .idea
+fs_service/target
+fs_api/target
