@@ -19,4 +19,6 @@ public interface FileEntityMapper extends BaseMapper<FileEntityModel> {
 
     List<FileEntityModel> getByUuids(String[] uuids);
 
+    List<FileEntityModel> getByParentId(String key, int parentId);
+
 }

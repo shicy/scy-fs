@@ -92,19 +92,10 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         model.setExt(ext);
         model.setDirectory((short)0);
         model.setCreateDate(new Date());
-        model.setParentId(0);
-        model.setParentIds("");
 
         FileEntityModel parent = getByPath(key, path, true);
-        if (parent != null) {
-            model.setParentId(parent.getId());
-            String parentIds = parent.getParentIds();
-            if (parentIds.length() > 0) {
-                parentIds = parentIds.substring(0, parentIds.length() - 1);
-                parentIds += parent.getId() + ",0";
-                model.setParentIds(parentIds);
-            }
-        }
+        model.setParentId(parent != null ? parent.getId() : 0);
+        model.setParentIds(getParentIds(parent));
 
         entityMapper.add(model);
 
@@ -139,21 +130,42 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
 
     @Override
     public List<FileEntityModel> deleteDir(String key, String path, boolean includeSubDir, boolean includeFile) {
+        FileEntityModel entityModel = getByPath(key, path, false);
+        if (entityModel != null)
+            return deleteDir(entityModel, includeSubDir, includeFile);
         return null;
     }
 
     @Override
     public FileEntityModel moveFile(String key, String uuid, String toPath) {
+        FileEntityModel entityModel = getByUuid(key, uuid);
+        if (entityModel != null) {
+            return move(entityModel, getByPath(key, toPath, true));
+        }
         return null;
     }
 
     @Override
     public List<FileEntityModel> moveFiles(String key, String[] uuids, String toPath) {
-        return null;
+        List<FileEntityModel> entityModels = new ArrayList<FileEntityModel>();
+        if (uuids != null && uuids.length > 0) {
+            FileEntityModel parentModel = getByPath(key, toPath, true);
+            for (String uuid: uuids) {
+                if (StringUtils.isBlank(uuid))
+                    continue;
+                FileEntityModel model = getByUuid(key, uuid.trim());
+                entityModels.add(move(model, parentModel));
+            }
+        }
+        return entityModels;
     }
 
     @Override
     public FileEntityModel moveDir(String key, String fromPath, String toPath) {
+        FileEntityModel entityModel = getByPath(key, fromPath, false);
+        if (entityModel != null) {
+            return move(entityModel, getByPath(key, toPath, true));
+        }
         return null;
     }
 
@@ -167,6 +179,20 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         if (model != null)
             return getUuid();
         return uuid;
+    }
+
+    /**
+     * 作为上级目录，获取所有上级目录编号
+     */
+    private String getParentIds(FileEntityModel model) {
+        if (model != null) {
+            String parentIds = model.getParentIds();
+            if (StringUtils.isBlank(parentIds))
+                return "0," + model.getId() + ",0";
+            parentIds = parentIds.substring(0, parentIds.length() - 1);
+            return parentIds + model.getId() + ",0";
+        }
+        return "";
     }
 
     /**
@@ -226,23 +252,80 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         model.setName(name);
         model.setDirectory((short)1);
         model.setCreateDate(new Date());
-        if (parent != null) {
-            model.setParentId(parent.getId());
-            String parentIds = parent.getParentIds();
-            if (parentIds.length() > 0) {
-                parentIds = parentIds.substring(0, parentIds.length() - 1);
-                parentIds += parent.getId() + ",0";
-            }
-            else {
-                parentIds = "0," + parent.getId() + ",0";
-            }
-            model.setParentIds(parentIds);
-        }
-        else {
-            model.setParentId(0);
-            model.setParentIds("");
-        }
+        model.setParentId(parent != null ? parent.getId() : 0);
+        model.setParentIds(getParentIds(parent));
         entityMapper.add(model);
+        return model;
+    }
+
+    /**
+     * 删除目录
+     * @param parent 想要删除的目录
+     * @param includeSubDir 为true时删除子目录
+     * @param includeFile 为true时删除文件
+     * @return 被删除的文件及目录
+     */
+    private List<FileEntityModel> deleteDir(FileEntityModel parent, boolean includeSubDir, boolean includeFile) {
+        List<FileEntityModel> deleteModels = new ArrayList<FileEntityModel>();
+
+        int deleteCount = 0;
+        List<FileEntityModel> models = entityMapper.getByParentId(parent.getKey(), parent.getId());
+        if (models != null && models.size() > 0) {
+            for (FileEntityModel model: models) {
+                if (model.isDirectory()) {
+                    if (includeSubDir) {
+                        deleteCount += 1;
+                        deleteModels.addAll(deleteDir(model, true, includeFile));
+                    }
+                }
+                else if (includeFile) {
+                    deleteCount += 1;
+                    entityMapper.delete(model);
+                    FileManager.remove(model);
+                    deleteModels.add(model);
+                }
+            }
+        }
+
+        if (models == null || deleteCount == models.size()) {
+            entityMapper.delete(parent);
+            deleteModels.add(parent);
+        }
+
+        return deleteModels;
+    }
+
+    /**
+     * 移动文件或目录
+     * @param model 被移动的文件或目录
+     * @param parent 被移动到的上级目录
+     * @return 移动后的文件信息
+     */
+    private FileEntityModel move(FileEntityModel model, FileEntityModel parent) {
+        int parentId = parent != null ? parent.getId() : 0;
+        String parentIds = getParentIds(parent);
+        return move(model, parentId, parentIds);
+    }
+
+    /**
+     * 移动文件或目录
+     * @param model 被移动的文件或目录
+     * @param parentId 上级目录编号
+     * @param parentIds 所有上上级目录编号
+     */
+    private FileEntityModel move(FileEntityModel model, int parentId, String parentIds) {
+        model.setParentId(parentId);
+        model.setParentIds(parentIds);
+        if (model.isDirectory()) {
+            List<FileEntityModel> models = entityMapper.getByParentId(model.getKey(), model.getId());
+            if (models != null && models.size() > 0) {
+                parentId = model.getId();
+                parentIds = getParentIds(model);
+                for (FileEntityModel _model: models) {
+                    move(_model, parentId, parentIds);
+                }
+            }
+        }
         return model;
     }
 
