@@ -42,5 +42,6 @@ CREATE TABLE IF NOT EXISTS `entity` (
   `createTime` BIGINT NULL,
   `updateTime` BIGINT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `u_register_uuid_idx` (`uuid` ASC))
+  UNIQUE INDEX `u_entity_uuid_idx` (`uuid` ASC),
+  INDEX `n_entity_name_idx` (`name` ASC))
 COMMENT = '注册表';

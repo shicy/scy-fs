@@ -1,9 +1,12 @@
 package org.scy.fs.manager;
 
+import org.apache.commons.lang3.StringUtils;
 import org.scy.fs.model.FileEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 文件管理
@@ -17,6 +20,14 @@ public class FileManager {
      * @param file Http上传的文件
      */
     public static void save(FileEntity entity, MultipartFile file) {
+
+    }
+
+    /**
+     * 删除文件
+     * @param entity 文件信息
+     */
+    public static void remove(FileEntity entity) {
 
     }
 
@@ -36,6 +47,22 @@ public class FileManager {
      */
     public static InputStream stream(FileEntity[] entities) {
         return null;
+    }
+
+    /**
+     * 解析路径，获取目录名称
+     * @param path 路径，如：/a/b
+     */
+    public static String[] getPaths(String path) {
+        List<String> results = new ArrayList<String>();
+        if (StringUtils.isNotBlank(path)) {
+            String[] paths = StringUtils.split(path, "/");
+            for (String _path: paths) {
+                if (StringUtils.isNotBlank(_path))
+                    results.add(_path.trim());
+            }
+        }
+        return results.toArray(new String[0]);
     }
 
 }

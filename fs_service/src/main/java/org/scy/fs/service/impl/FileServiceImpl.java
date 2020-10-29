@@ -1,13 +1,13 @@
 package org.scy.fs.service.impl;
 
 import org.apache.commons.lang3.StringUtils;
-import org.omg.CORBA.BAD_PARAM;
 import org.scy.common.ds.PageInfo;
 import org.scy.common.ds.query.Oper;
 import org.scy.common.ds.query.Selector;
 import org.scy.common.utils.StringUtilsEx;
 import org.scy.common.web.service.MybatisBaseService;
 import org.scy.fs.form.SearchForm;
+import org.scy.fs.manager.FileManager;
 import org.scy.fs.mapper.FileEntityMapper;
 import org.scy.fs.model.FileEntityModel;
 import org.scy.fs.service.FileService;
@@ -64,10 +64,9 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         if (form.getParentId() >= 0)
             selector.addFilter("parentId", form.getParentId());
         if (form.getPath() != null) {
-            List<FileEntityModel> models = getByPath(form.getPath());
-            if (models.size() > 0) {
-                selector.addFilter("parentId", models.get(models.size() - 1).getId());
-            }
+            FileEntityModel model = getByPath(key, form.getPath(), false);
+            if (model != null)
+                selector.addFilter("parentId", model.getId());
         }
 
         if (form.getOrderBy() != null)
@@ -80,18 +79,62 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
 
     @Override
     public FileEntityModel add(String key, MultipartFile file, String fileName, String path) {
+        if (StringUtils.isBlank(fileName))
+            fileName = file.getName();
+        String ext = StringUtils.substringAfterLast(fileName, ".");
+        if (ext.length() > 20)
+            ext = ext.substring(0, 20);
 
-        return null;
+        FileEntityModel model = new FileEntityModel();
+        model.setKey(key);
+        model.setUuid(getUuid());
+        model.setName(fileName);
+        model.setExt(ext);
+        model.setDirectory((short)0);
+        model.setCreateDate(new Date());
+        model.setParentId(0);
+        model.setParentIds("");
+
+        FileEntityModel parent = getByPath(key, path, true);
+        if (parent != null) {
+            model.setParentId(parent.getId());
+            String parentIds = parent.getParentIds();
+            if (parentIds.length() > 0) {
+                parentIds = parentIds.substring(0, parentIds.length() - 1);
+                parentIds += parent.getId() + ",0";
+                model.setParentIds(parentIds);
+            }
+        }
+
+        entityMapper.add(model);
+
+        FileManager.save(model, file);
+
+        return model;
     }
 
     @Override
     public FileEntityModel delete(String key, String uuid) {
+        FileEntityModel model = entityMapper.getByUuid(uuid);
+        if (model != null && model.getKey().equals(key)) {
+            entityMapper.delete(model);
+            FileManager.remove(model);
+            return model;
+        }
         return null;
     }
 
     @Override
     public List<FileEntityModel> delete(String key, String[] uuids) {
-        return null;
+        List<FileEntityModel> entityModels = new ArrayList<FileEntityModel>();
+        for (String uuid: uuids) {
+            if (StringUtils.isNotBlank(uuid)) {
+                FileEntityModel entityModel = delete(key, uuid);
+                if (entityModel != null)
+                    entityModels.add(entityModel);
+            }
+        }
+        return entityModels;
     }
 
     @Override
@@ -115,6 +158,9 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
     }
 
     // ========================================================================
+    /**
+     * 获取文件唯一编号
+     */
     private String getUuid() {
         String uuid = StringUtilsEx.getRandomString(32);
         FileEntityModel model = entityMapper.getByUuid(uuid);
@@ -123,47 +169,60 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         return uuid;
     }
 
-    private List<FileEntityModel> getByPath(String path) {
-        List<FileEntityModel> entityModels = new ArrayList<FileEntityModel>();
-        if (StringUtils.isNotBlank(path)) {
-            int parentId = 0;
-            String[] paths = StringUtils.split(path, "/");
-            for (String _path: paths) {
-                _path = StringUtils.trimToEmpty(_path);
-                if (_path.length() == 0)
-                    continue;
-                FileEntityModel entityModel = entityMapper.getDirByName(_path, parentId);
-                if (entityModel == null)
-                    break;
-                entityModels.add(entityModel);
-                parentId = entityModel.getId();
+    /**
+     * 根据路径获取目录信息
+     * @param key 第三方key
+     * @param path 路径，如：/a/b
+     * @param autoCreate 是否自动创建目录
+     * @return 该路径末尾的目录信息
+     */
+    private FileEntityModel getByPath(String key, String path, boolean autoCreate) {
+        String[] dirNames = FileManager.getPaths(path);
+        if (dirNames.length > 0) {
+            List<FileEntityModel> models = getPathDirs(key, dirNames, autoCreate);
+            if (dirNames.length == models.size()) {
+                return models.get(dirNames.length - 1);
             }
         }
-        return  entityModels;
+        return null;
     }
 
-    private List<FileEntityModel> mkdirs(String key, String path) {
+    /**
+     * 获取或创建目录
+     * @param key 第三方key
+     * @param dirNames 目录名称
+     * @param autoCreate 是否自动创建目录
+     * @return 目录信息
+     */
+    private List<FileEntityModel> getPathDirs(String key, String[] dirNames, boolean autoCreate) {
         List<FileEntityModel> entityModels = new ArrayList<FileEntityModel>();
-        if (StringUtils.isNotBlank(path)) {
-            int parentId = 0;
-            String[] paths = StringUtils.split(path.trim(), "/");
-            for (String _path: paths) {
-                _path = StringUtils.trimToEmpty(_path);
-                if (_path.length() == 0)
-                    continue;
-                FileEntityModel entityModel = entityMapper.getDirByName(_path, parentId);
-                if (entityModel == null) {
-                    entityModel = new FileEntityModel();
-
-                }
+        int parentId = 0;
+        FileEntityModel parentModel = null;
+        for (String dirName: dirNames) {
+            FileEntityModel model = entityMapper.getDirByName(key, dirName, parentId);
+            if (model == null && autoCreate) {
+                model = addDir(key, dirName, parentModel);
             }
+            if (model == null)
+                break;
+            entityModels.add(model);
+            parentId = model.getId();
+            parentModel = model;
         }
         return entityModels;
     }
 
+    /**
+     * 添加目录
+     * @param key 第三方key
+     * @param name 目录名称
+     * @param parent 上级目录
+     * @return 目录实例
+     */
     private FileEntityModel addDir(String key, String name, FileEntityModel parent) {
         FileEntityModel model = new FileEntityModel();
         model.setKey(key);
+        // model.setUuid(getUuid()); // 目录就不给唯一编号了
         model.setName(name);
         model.setDirectory((short)1);
         model.setCreateDate(new Date());
@@ -171,9 +230,8 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
             model.setParentId(parent.getId());
             String parentIds = parent.getParentIds();
             if (parentIds.length() > 0) {
-                String[] _parentIds = StringUtils.split(parentIds, ",");
-                _parentIds[_parentIds.length - 1] = "" + parent.getId();
-                parentIds = StringUtils.join(_parentIds, ",") + ",0";
+                parentIds = parentIds.substring(0, parentIds.length() - 1);
+                parentIds += parent.getId() + ",0";
             }
             else {
                 parentIds = "0," + parent.getId() + ",0";
