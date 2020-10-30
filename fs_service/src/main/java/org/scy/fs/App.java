@@ -18,7 +18,7 @@ public class App extends BaseApplication {
 
     @Override
     protected String getDbScriptResource() {
-        return "org.scy.fs.scripts";
+        return "org/scy/fs/scripts";
     }
 
 }

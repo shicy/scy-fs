@@ -2,6 +2,7 @@ package org.scy.fs.manager;
 
 import org.apache.commons.lang3.StringUtils;
 import org.scy.fs.model.FileEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -13,6 +14,12 @@ import java.util.List;
  * Created by shicy 2020/10/28
  */
 public class FileManager {
+
+    /**
+     * 文件存储根目录
+     */
+    @Value("${app.fs.fileRoot:#{null}}")
+    private String fileRoot;
 
     /**
      * 存储文件
