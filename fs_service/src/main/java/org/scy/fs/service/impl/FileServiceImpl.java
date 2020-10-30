@@ -9,7 +9,9 @@ import org.scy.common.web.service.MybatisBaseService;
 import org.scy.fs.form.SearchForm;
 import org.scy.fs.manager.FileManager;
 import org.scy.fs.mapper.FileEntityMapper;
+import org.scy.fs.mapper.RegisterMapper;
 import org.scy.fs.model.FileEntityModel;
+import org.scy.fs.model.RegisterModel;
 import org.scy.fs.service.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,9 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
 
     @Autowired
     private FileEntityMapper entityMapper;
+
+    @Autowired
+    private RegisterMapper registerMapper;
 
     @Override
     public FileEntityModel getByUuid(String key, String uuid) {
@@ -90,6 +95,7 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         model.setUuid(getUuid());
         model.setName(fileName);
         model.setExt(ext);
+        model.setSize(file.getSize());
         model.setDirectory((short)0);
         model.setCreateDate(new Date());
 
@@ -99,6 +105,11 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
 
         entityMapper.add(model);
 
+        RegisterModel registerModel = registerMapper.getByKey(key);
+        registerModel.setSize(registerModel.getSize() + model.getSize());
+        registerModel.setUpdateDate(new Date());
+        registerMapper.update(registerModel);
+
         FileManager.save(model, file);
 
         return model;
@@ -106,24 +117,28 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
 
     @Override
     public FileEntityModel delete(String key, String uuid) {
-        FileEntityModel model = entityMapper.getByUuid(uuid);
-        if (model != null && model.getKey().equals(key)) {
-            entityMapper.delete(model);
-            FileManager.remove(model);
-            return model;
-        }
-        return null;
+        List<FileEntityModel> models = delete(key, new String[]{uuid});
+        return models.size() > 0 ? models.get(0) : null;
     }
 
     @Override
     public List<FileEntityModel> delete(String key, String[] uuids) {
         List<FileEntityModel> entityModels = new ArrayList<FileEntityModel>();
-        for (String uuid: uuids) {
-            if (StringUtils.isNotBlank(uuid)) {
-                FileEntityModel entityModel = delete(key, uuid);
-                if (entityModel != null)
-                    entityModels.add(entityModel);
+        if (uuids != null && uuids.length > 0) {
+            RegisterModel registerModel = registerMapper.getByKey(key);
+            for (String uuid: uuids) {
+                if (StringUtils.isNotBlank(uuid)) {
+                    FileEntityModel model = entityMapper.getByUuid(uuid);
+                    if (model != null && model.getKey().equals(key)) {
+                        entityMapper.delete(model);
+                        FileManager.remove(model);
+                        registerModel.setSize(registerModel.getSize() - model.getSize());
+                        entityModels.add(model);
+                    }
+                }
             }
+            registerModel.setUpdateDate(new Date());
+            registerMapper.update(registerModel);
         }
         return entityModels;
     }
@@ -131,8 +146,23 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
     @Override
     public List<FileEntityModel> deleteDir(String key, String path, boolean includeSubDir, boolean includeFile) {
         FileEntityModel entityModel = getByPath(key, path, false);
-        if (entityModel != null)
-            return deleteDir(entityModel, includeSubDir, includeFile);
+        if (entityModel != null) {
+            List<FileEntityModel> models = deleteDir(entityModel, includeSubDir, includeFile);
+            if (models.size() > 0) {
+                RegisterModel registerModel = registerMapper.getByKey(key);
+                long totalSize = registerModel.getSize();
+                for (FileEntityModel model: models) {
+                    if (!model.isDir())
+                        totalSize -= model.getSize();
+                }
+                if (totalSize != registerModel.getSize()) {
+                    registerModel.setSize(totalSize);
+                    registerModel.setUpdateDate(new Date());
+                    registerMapper.update(registerModel);
+                }
+            }
+            return models;
+        }
         return null;
     }
 
@@ -250,6 +280,7 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         model.setKey(key);
         // model.setUuid(getUuid()); // 目录就不给唯一编号了
         model.setName(name);
+        model.setSize(0L);
         model.setDirectory((short)1);
         model.setCreateDate(new Date());
         model.setParentId(parent != null ? parent.getId() : 0);
@@ -272,7 +303,7 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         List<FileEntityModel> models = entityMapper.getByParentId(parent.getKey(), parent.getId());
         if (models != null && models.size() > 0) {
             for (FileEntityModel model: models) {
-                if (model.isDirectory()) {
+                if (model.isDir()) {
                     if (includeSubDir) {
                         deleteCount += 1;
                         deleteModels.addAll(deleteDir(model, true, includeFile));
@@ -316,7 +347,8 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
     private FileEntityModel move(FileEntityModel model, int parentId, String parentIds) {
         model.setParentId(parentId);
         model.setParentIds(parentIds);
-        if (model.isDirectory()) {
+        entityMapper.updateParent(model);
+        if (model.isDir()) {
             List<FileEntityModel> models = entityMapper.getByParentId(model.getKey(), model.getId());
             if (models != null && models.size() > 0) {
                 parentId = model.getId();
