@@ -6,6 +6,8 @@ package org.scy.fs.model;
  */
 public class FileEntityModel extends FileEntity {
 
+    private static final long serialVersionUID = 1002020103017430002L;
+
     // 第三方访问key值
     private String key;
 

@@ -8,6 +8,8 @@ import org.scy.common.web.model.BaseModel;
  */
 public class RegisterModel extends BaseModel {
 
+    private static final long serialVersionUID = 1002020103017440001L;
+
     // key值
     private String key;
 

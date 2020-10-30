@@ -8,6 +8,8 @@ import org.scy.common.web.model.BaseModel;
  */
 public class FileEntity extends BaseModel {
 
+    private static final long serialVersionUID = 1002020103017430001L;
+
     // 唯一编号
     private String uuid;
 
@@ -77,7 +79,7 @@ public class FileEntity extends BaseModel {
         this.parentIds = parentIds;
     }
 
-    public boolean isDirectory() {
+    public boolean isDir() {
         return directory == 1;
     }
 
