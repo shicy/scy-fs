@@ -21,4 +21,6 @@ public interface FileEntityMapper extends BaseMapper<FileEntityModel> {
 
     List<FileEntityModel> getByParentId(String key, int parentId);
 
+    void updateParent(FileEntityModel model);
+
 }

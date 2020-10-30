@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.scy.fs.mapper.FileEntityMapper">
+
+    <!-- getById -->
+    <select id="getById" resultType="FileEntityModel">
+        select * from `entity` where id = #{id}
+    </select>
+
+    <!-- getByUuid -->
+    <select id="getByUuid" resultType="FileEntityModel">
+        select * from `entity` where uuid = #{uuid} limit 1
+    </select>
+
+    <!-- getDirByName -->
+    <select id="getDirByName" resultType="FileEntityModel">
+        select * from `entity`
+        where key = #{key} and parentId = #{parentId} and name = #{name}
+        limit 1
+    </select>
+
+    <!-- getByUuids -->
+    <select id="getByUuids" resultType="FileEntityModel">
+        select * from `entity`
+        where uuid in
+        <foreach collection="uuids" item="uuid" open="(" separator="," close=")">
+            #{uuid}
+        </foreach>
+    </select>
+
+    <!-- getByParentId -->
+    <select id="getByParentId" resultType="FileEntityModel">
+        select * from `entity`
+        where key = #{key} and parentId = #{parentId}
+    </select>
+
+    <!-- add -->
+    <insert id="add" parameterType="FileEntityModel" useGeneratedKeys="true" keyProperty="id">
+        insert into `entity` (key, uuid, name, ext, size, directory, parentId, parentIds,
+            state, createTime)
+        values (#{key}, #{uuid}, #{name}, ${ext}, #{size}, #{directory}, ${parentId},
+            ${parentIds}, #{state}, #{createTime})
+    </insert>
+
+    <!-- update -->
+    <update id="update" parameterType="FileEntityModel">
+        update `entity`
+        set name = #{name}, ext = #{ext}, size = #{size}, parentId = #{parentId},
+            parentIds = #{parentIds}, updateTime = #{updateTime}
+        where id = ${id}
+    </update>
+
+    <!-- updateParent -->
+    <update id="updateParent" parameterType="FileEntityModel">
+        update `entity`
+        set parentId = #{parentId}, parentIds = #{parentIds}, updateTime = #{updateTime}
+        where id = ${id}
+    </update>
+
+    <!-- delete -->
+    <update id="delete" parameterType="FileEntityModel">
+        delete from `entity` where id = #{id}
+    </update>
+
+    <!-- find -->
+    <select id="find" parameterType="org.scy.common.ds.query.Selector" resultType="FileEntityModel">
+        select * from `entity` ${where} ${group} ${order} ${limit}
+    </select>
+
+    <!-- countFind -->
+    <select id="countFind" parameterType="org.scy.common.ds.query.Selector" resultType="Integer">
+        select count(id) as count from `entity` ${where} ${group}
+    </select>
+
+</mapper>
