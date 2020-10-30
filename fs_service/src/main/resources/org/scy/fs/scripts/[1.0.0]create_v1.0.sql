@@ -12,7 +12,7 @@
 -- Table `register`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `register` (
-  `id` INT NOT NULL COMMENT '编号',
+  `id` INT NOT NULL AUTO_INCREMENT,
   `key` CHAR(32) NOT NULL,
   `name` VARCHAR(100) NULL COMMENT '名称',
   `size` BIGINT NULL COMMENT '当前使用容量',
@@ -29,7 +29,7 @@ COMMENT = '注册表';
 -- Table `entity`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `entity` (
-  `id` INT NOT NULL COMMENT '编号',
+  `id` INT NOT NULL AUTO_INCREMENT,
   `key` CHAR(32) NOT NULL,
   `uuid` CHAR(32) NULL COMMENT '唯一编号',
   `name` VARCHAR(200) NULL COMMENT '名称',
