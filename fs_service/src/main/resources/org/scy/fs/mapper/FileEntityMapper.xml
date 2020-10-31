@@ -15,7 +15,7 @@
     <!-- getDirByName -->
     <select id="getDirByName" resultType="FileEntityModel">
         select * from `entity`
-        where key = #{key} and parentId = #{parentId} and name = #{name}
+        where `key` = #{key} and parentId = #{parentId} and name = #{name}
         limit 1
     </select>
 
@@ -31,15 +31,15 @@
     <!-- getByParentId -->
     <select id="getByParentId" resultType="FileEntityModel">
         select * from `entity`
-        where key = #{key} and parentId = #{parentId}
+        where `key` = #{key} and parentId = #{parentId}
     </select>
 
     <!-- add -->
     <insert id="add" parameterType="FileEntityModel" useGeneratedKeys="true" keyProperty="id">
-        insert into `entity` (key, uuid, name, ext, size, directory, parentId, parentIds,
+        insert into `entity` (`key`, uuid, name, ext, size, directory, parentId, parentIds,
             state, createTime)
-        values (#{key}, #{uuid}, #{name}, ${ext}, #{size}, #{directory}, ${parentId},
-            ${parentIds}, #{state}, #{createTime})
+        values (#{key}, #{uuid}, #{name}, #{ext}, #{size}, #{directory}, #{parentId},
+            #{parentIds}, #{state}, #{createTime})
     </insert>
 
     <!-- update -->

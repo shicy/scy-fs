@@ -1,6 +1,7 @@
 package org.scy.fs.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.scy.common.ds.mybatis.BaseMapper;
 import org.scy.fs.model.RegisterModel;
 
@@ -11,6 +12,6 @@ import org.scy.fs.model.RegisterModel;
 @Mapper
 public interface RegisterMapper extends BaseMapper<RegisterModel> {
 
-    RegisterModel getByKey(String key);
+    RegisterModel getByKey(@Param("key") String key);
 
 }

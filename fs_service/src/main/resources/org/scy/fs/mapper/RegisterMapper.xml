@@ -9,19 +9,19 @@
 
     <!-- getByKey -->
     <select id="getByKey" resultType="RegisterModel">
-        select * from `register` where key = #{key} and state > 0 limit 1
+        select * from `register` where `key` = #{key} and state > 0 limit 1
     </select>
 
     <!-- add -->
     <insert id="add" parameterType="RegisterModel" useGeneratedKeys="true" keyProperty="id">
-        insert into `register` (key, name, size, `limit`, state, createTime)
+        insert into `register` (`key`, name, size, `limit`, state, createTime)
         values (#{key}, #{name}, #{size}, #{limit}, #{state}, #{createTime})
     </insert>
 
     <!-- update -->
     <update id="update" parameterType="RegisterModel">
         update `register`
-        set key = #{key}, name = #{name}, size = #{size}, `limit` = #{limit}, updateTime = #{updateTime}
+        set `key` = #{key}, name = #{name}, size = #{size}, `limit` = #{limit}, updateTime = #{updateTime}
         where id = ${id}
     </update>
 

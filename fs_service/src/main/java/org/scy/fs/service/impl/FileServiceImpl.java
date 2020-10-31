@@ -61,7 +61,7 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
     public List<FileEntityModel> find(String key, SearchForm form, PageInfo pageInfo) {
         Selector selector = Selector.build(pageInfo);
 
-        selector.addFilter("key", key);
+        selector.addFilter("`key`", key);
         if (form.getName() != null)
             selector.addFilter("name", form.getName());
         if (form.getNameLike() != null)
@@ -85,7 +85,7 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
     @Override
     public FileEntityModel add(String key, MultipartFile file, String fileName, String path) {
         if (StringUtils.isBlank(fileName))
-            fileName = file.getName();
+            fileName = file.getOriginalFilename();
         String ext = StringUtils.substringAfterLast(fileName, ".");
         if (ext.length() > 20)
             ext = ext.substring(0, 20);
@@ -205,6 +205,7 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
      */
     private String getUuid() {
         String uuid = StringUtilsEx.getRandomString(32);
+        uuid = uuid.toLowerCase();
         FileEntityModel model = entityMapper.getByUuid(uuid);
         if (model != null)
             return getUuid();

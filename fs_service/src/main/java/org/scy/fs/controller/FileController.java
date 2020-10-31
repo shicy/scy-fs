@@ -24,8 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedOutputStream;
-import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -151,63 +150,66 @@ public class FileController extends BaseController {
      *   -param uuids 批量下载时，想要下载的文件唯一编号集，逗号分隔
      *   -param fileName 重命名下载文件名称
      */
-    @RequestMapping(value = "/file/download", method = RequestMethod.GET)
+    @RequestMapping(value = "/file/download")
     public Object download(HttpServletRequest request, HttpServletResponse response) {
         String key = checkKey(HttpUtilsEx.getStringValue(request, "key"));
 
-        InputStream in = null;
-        OutputStream out = null;
+        response.reset();
+        response.setContentType("application/octet-stream;charset=utf-8");
+
+        OutputStream output = null;
         try {
+            output = response.getOutputStream();
+
             String uuid = HttpUtilsEx.getStringValue(request, "uuids");
             String fileName = HttpUtilsEx.getStringValue(request, "fileName");
-            if (StringUtils.isNotBlank(uuid)) {
+            if (StringUtils.isNotBlank(uuid)) { // 批量下载
                 String[] uuids = StringUtils.split(uuid.trim(), ",");
                 List<FileEntityModel> entities = fileService.getByUuids(key, uuids);
-                in = FileManager.stream(entities.toArray(new FileEntity[0]));
-                if (StringUtils.isBlank(fileName) && entities.size() > 0)
-                    fileName = entities.get(0).getName();
-            }
-            else {
-                uuid = HttpUtilsEx.getStringValue(request, "uuid");
-                if (StringUtils.isNotBlank(uuid)) {
-                    FileEntity entity = fileService.getByUuid(key, uuid);
-                    if (entity != null) {
-                        in = FileManager.stream(entity);
-                        if (StringUtils.isBlank(fileName))
-                            fileName = entity.getName();
-                    }
-                }
-                else {
-                    return HttpResult.error(Const.MSG_CODE_PARAMMISSING);
-                }
-            }
 
-            if (in != null) {
-                response.reset();
-                response.setContentType("application/octet-stream");
-                response.addHeader("Content-Length", "" + in.available());
+                FileEntity[] _entities = entities.toArray(new FileEntity[0]);
+                // 总大小不确定，无法设置
+                // response.addHeader("Content-Length", "" + FileManager.getSize(_entities));
+                response.addHeader("Content-Encoding", "chunked");
+
+                if (StringUtils.isBlank(fileName) && _entities.length > 0)
+                    fileName = StringUtils.substringBeforeLast(_entities[0].getName(), ".") + ".zip";
+                fileName = HttpUtilsEx.encodeFileName(request, fileName);
                 response.addHeader("Content-Disposition", "attachment;filename=" + fileName);
 
-                out = new BufferedOutputStream(response.getOutputStream());
-                byte[] buffer = new byte[2048];
-                int readBytes;
-                while ((readBytes = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, readBytes);
-                }
-                out.flush();
+                FileManager.stream(_entities, output);
+                return null;
             }
-        }
-        catch (Exception e) {
+
+            uuid = HttpUtilsEx.getStringValue(request, "uuid");
+            if (StringUtils.isNotBlank(uuid)) { // 单文件下载
+                FileEntity entity = fileService.getByUuid(key, uuid);
+                if (entity != null) {
+                    response.addHeader("Content-Length", "" + entity.getSize());
+
+                    if (StringUtils.isBlank(fileName))
+                        fileName = entity.getName();
+                    fileName = HttpUtilsEx.encodeFileName(request, fileName);
+                    response.addHeader("Content-Disposition", "attachment;filename=" + fileName);
+
+                    FileManager.stream(entity, output);
+                    return null;
+                }
+
+                response.reset();
+                return HttpResult.error("文件不存在！");
+            }
+        } catch (IOException e) {
             e.printStackTrace();
-            logger.error("下载文件错误：" + e.getMessage());
-            return HttpResult.error("文件加载错误");
-        }
-        finally {
-            IOUtils.closeQuietly(in);
-            IOUtils.closeQuietly(out);
+            logger.error(e.getMessage());
+            response.reset();
+            return HttpResult.error("文件下载错误");
+        } finally {
+            IOUtils.closeQuietly(output);
         }
 
-        return null;
+        response.reset();
+        return HttpResult.error(Const.MSG_CODE_PARAMMISSING);
     }
 
     /**

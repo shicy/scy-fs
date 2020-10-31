@@ -1,6 +1,7 @@
 package org.scy.fs.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.scy.common.ds.mybatis.BaseMapper;
 import org.scy.fs.model.FileEntityModel;
 
@@ -13,13 +14,13 @@ import java.util.List;
 @Mapper
 public interface FileEntityMapper extends BaseMapper<FileEntityModel> {
 
-    FileEntityModel getByUuid(String uuid);
+    FileEntityModel getByUuid(@Param("uuid") String uuid);
 
-    FileEntityModel getDirByName(String key, String name, int parentId);
+    FileEntityModel getDirByName(@Param("key") String key, @Param("name") String name, @Param("parentId") int parentId);
 
-    List<FileEntityModel> getByUuids(String[] uuids);
+    List<FileEntityModel> getByUuids(@Param("uuids") String[] uuids);
 
-    List<FileEntityModel> getByParentId(String key, int parentId);
+    List<FileEntityModel> getByParentId(@Param("key") String key, @Param("parentId") int parentId);
 
     void updateParent(FileEntityModel model);
 
