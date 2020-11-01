@@ -29,7 +29,7 @@ public class FileManager {
     // 文件存储根目录
     private static String fileRoot;
 
-    @Value("${app.fs.fileRoot:#{null}}")
+    @Value("${app.fs-service.fileRoot:#{null}}")
     private String fileRootTemp;
 
     @PostConstruct
