@@ -1,0 +1,10 @@
+#! /bin/bash
+
+profile=$1
+version=$2
+
+# 远程执行
+ssh root@www.scyok.com << remotessh
+/mnt/src/scy-fs/build/deploy $profile $version
+exit
+remotessh

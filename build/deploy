@@ -1,0 +1,54 @@
+#! /bin/bash
+
+profile=$1
+version=$2
+
+if [ ! $1 ]; then
+	profile="prod"
+fi
+
+if [ ! $2 ]; then
+	version="1.0.0"
+fi
+
+# 转到根目录
+cd -P $(dirname "$0")
+cd ..
+echo -e "目录: "`pwd`
+
+# 更新代码
+echo -e "\n> 代码同步"
+cd ../jcoms
+echo -e pull src jcoms: `pwd`
+git pull
+echo -e done.
+
+cd ../scy-fs
+echo -e pull src scy-fs: `pwd`
+git pull
+echo -e done.
+
+# 构建
+echo -e "\n> 构建"
+mvn clean
+mvn install
+mvn package -P ${profile}
+echo -e done.
+
+# 部署
+echo -e "\n> 部署"
+docker stop scyfs
+docker rm scyfs
+docker rmi shicy/scyfs:${version}
+
+docker build -t shicy/scyfs:${version} .
+docker run -itd \
+    -p 12304:12304 \
+    -v /mnt/logs/scyfs:/mnt/app/logs \
+    -v /mnt/fstorage:/mnt/app/fstorage \
+    --name scyfs \
+    --network mynet \
+    --ip 172.2.2.4 \
+    shicy/scyfs:${version}
+
+echo -e "\n> 完成！！"
