@@ -2,6 +2,9 @@ package org.scy.fs.form;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 查询表单
  * Create by shicy on 2020/10/17
@@ -78,6 +81,25 @@ public class SearchForm {
 
     public void setOrderDesc(boolean orderDesc) {
         this.orderDesc = orderDesc;
+    }
+
+    public Map<String, String> toMap() {
+        return toMap(new HashMap<String, String>());
+    }
+
+    public Map<String, String> toMap(Map<String, String> map) {
+        if (name != null)
+            map.put("name", name);
+        if (nameLike != null)
+            map.put("nameLike", nameLike);
+        map.put("parentId", "" + parentId);
+        if (path != null)
+            map.put("path", path);
+        if (orderBy != null) {
+            map.put("orderBy", orderBy);
+            map.put("orderDesc", orderDesc ? "true" : "false");
+        }
+        return map;
     }
 
 }

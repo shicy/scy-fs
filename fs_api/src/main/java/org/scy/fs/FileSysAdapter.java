@@ -1,15 +1,20 @@
 package org.scy.fs;
 
 import org.scy.common.ds.PageInfo;
+import org.scy.common.utils.HttpUtilsEx;
+import org.scy.common.web.model.ResponseModel;
 import org.scy.fs.form.SearchForm;
 import org.scy.fs.model.FileEntity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 文件管理客户端适配器
@@ -18,8 +23,22 @@ import java.util.List;
 public class FileSysAdapter {
 
     // 第三方访问的key值
+    public static String access_key;
+
+    // 文件服务地址
+    public static String server_url;
+
     @Value("${app.fs.key:#{null}}")
-    private String access_key;
+    private String accessKeyTemp;
+
+    @Value("${app.fs-service.url:#{null}}")
+    private String serverUrlTemp;
+
+    @PostConstruct
+    public void init() {
+        access_key = accessKeyTemp;
+        server_url = serverUrlTemp;
+    }
 
     /**
      * 查找文件实例
@@ -28,6 +47,16 @@ public class FileSysAdapter {
      * @return 符合条件的文件实例信息
      */
     public static List<FileEntity> find(SearchForm form, PageInfo pageInfo) {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        if (form != null) {
+            params = form.toMap(params);
+        }
+        if (pageInfo != null) {
+            params.put("page", "" + pageInfo.getPage());
+        }
+        ResponseModel responseModel = HttpUtilsEx.doGet(getUrl("/file/list"), params);
+        System.out.println("===>" + responseModel);
         return null;
     }
 
@@ -167,6 +196,12 @@ public class FileSysAdapter {
      */
     public static FileEntity moveDir(String fromPath, String toPath) {
         return null;
+    }
+
+    private static String getUrl(String path) {
+        if (server_url == null)
+            throw new RuntimeException("未知文件服务");
+        return server_url + path;
     }
 
 }
