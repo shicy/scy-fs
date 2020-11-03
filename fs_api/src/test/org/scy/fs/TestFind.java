@@ -21,8 +21,8 @@ public class TestFind {
         PageInfo pageInfo = new PageInfo(1, 2, 0);
 
         List<FileEntity> entities = FileSysAdapter.find(form, pageInfo);
+        System.out.println("find results: " + pageInfo.getTotal());
         if (entities != null) {
-            System.out.println("find results: " + pageInfo.getTotal());
             for (FileEntity entity: entities) {
                 System.out.println("==>[" + entity.getUuid() + "]" + entity.getName());
             }

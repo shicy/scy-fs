@@ -1,7 +1,7 @@
 package org.scy.fs;
 
 import org.scy.common.ds.PageInfo;
-import org.scy.common.utils.HttpUtilsEx;
+import org.scy.common.utils.HttpClientEx;
 import org.scy.common.web.model.ResponseModel;
 import org.scy.fs.form.SearchForm;
 import org.scy.fs.model.FileEntity;
@@ -55,8 +55,10 @@ public class FileSysAdapter {
         if (pageInfo != null) {
             params.put("page", "" + pageInfo.getPage());
         }
-        ResponseModel responseModel = HttpUtilsEx.doGet(getUrl("/file/list"), params);
-        System.out.println("===>" + responseModel);
+        ResponseModel responseModel = HttpClientEx.doGet(getUrl("/file/list"), params);
+        if (responseModel.hasError())
+            throw new RuntimeException(responseModel.getErrorMessage());
+//        System.out.println("===>" + responseModel);
         return null;
     }
 
