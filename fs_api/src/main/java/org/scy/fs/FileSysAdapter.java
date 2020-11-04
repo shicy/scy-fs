@@ -1,8 +1,9 @@
 package org.scy.fs;
 
 import org.scy.common.ds.PageInfo;
-import org.scy.common.utils.HttpClientEx;
-import org.scy.common.web.model.ResponseModel;
+import org.scy.common.utils.HttpClientUtils;
+import org.scy.common.web.controller.HttpResponse;
+import org.scy.common.web.controller.HttpResult;
 import org.scy.fs.form.SearchForm;
 import org.scy.fs.model.FileEntity;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,11 +56,13 @@ public class FileSysAdapter {
         if (pageInfo != null) {
             params.put("page", "" + pageInfo.getPage());
         }
-        ResponseModel responseModel = HttpClientEx.doGet(getUrl("/file/list"), params);
-        if (responseModel.hasError())
-            throw new RuntimeException(responseModel.getErrorMessage());
-//        System.out.println("===>" + responseModel);
-        return null;
+        HttpResponse response = HttpClientUtils.doGet(getUrl("/file/list"), params);
+        if (response.hasError())
+            throw new RuntimeException(response.getErrorMessage());
+        HttpResult result = response.getResult();
+        if (pageInfo != null && result.getPageInfo() != null)
+            pageInfo.setTotal(result.getPageInfo().getTotal());
+        return result.getDataList(FileEntity.class);
     }
 
     /**

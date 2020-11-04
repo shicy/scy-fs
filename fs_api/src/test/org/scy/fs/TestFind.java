@@ -18,6 +18,7 @@ public class TestFind {
 
         SearchForm form = new SearchForm();
         form.setPath("/娱乐");
+        form.setParentId(-1);
         PageInfo pageInfo = new PageInfo(1, 2, 0);
 
         List<FileEntity> entities = FileSysAdapter.find(form, pageInfo);
