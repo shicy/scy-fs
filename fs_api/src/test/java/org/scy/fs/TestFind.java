@@ -13,11 +13,10 @@ import java.util.List;
 public class TestFind {
 
     public static void main(String[] args) {
-        FileSysAdapter.access_key = "sEXJLy0ZjD52EqKDDtmkpaLqSG8M5cul";
-        FileSysAdapter.server_url = "http://127.0.0.1:12104";
+        TestInit.init();
 
         SearchForm form = new SearchForm();
-        form.setPath("/娱乐");
+        form.setPath("/娱乐/游玩");
         form.setParentId(-1);
         PageInfo pageInfo = new PageInfo(1, 2, 0);
 

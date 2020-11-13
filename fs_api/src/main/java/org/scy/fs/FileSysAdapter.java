@@ -1,5 +1,6 @@
 package org.scy.fs;
 
+import org.apache.commons.lang.StringUtils;
 import org.scy.common.ds.PageInfo;
 import org.scy.common.utils.HttpClientUtils;
 import org.scy.common.web.controller.HttpResponse;
@@ -13,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +73,35 @@ public class FileSysAdapter {
      * @return 文件实例
      */
     public static FileEntity file(String uuid) {
+        if (StringUtils.isNotBlank(uuid)) {
+            Map<String, String> params = new HashMap<String, String>();
+            params.put("key", access_key);
+            String url = getUrl("/file/info/" + uuid);
+            HttpResponse response = HttpClientUtils.doGet(url, params);
+            if (response.hasError())
+                throw new RuntimeException(response.getErrorMessage());
+            HttpResult result = response.getResult();
+            return result.getData(FileEntity.class);
+        }
         return null;
+    }
+
+    /**
+     * 批量获取多个文件
+     * @param uuids 文件唯一编号集
+     * @return 文件实例
+     */
+    public static List<FileEntity> files(String[] uuids) {
+        if (uuids == null || uuids.length == 0)
+            return new ArrayList<FileEntity>();
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("uuids", StringUtils.join(uuids, ","));
+        HttpResponse response = HttpClientUtils.doGet(getUrl("/file/info"), params);
+        if (response.hasError())
+            throw new RuntimeException(response.getErrorMessage());
+        HttpResult result = response.getResult();
+        return result.getDataList(FileEntity.class);
     }
 
     /**
@@ -80,7 +110,21 @@ public class FileSysAdapter {
      * @return 该目录下的文件实例列表
      */
     public static List<FileEntity> dir(String path) {
-        return null;
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("size", "1000"); // 限制文件数
+        if (StringUtils.isBlank(path)) {
+            params.put("parentId", "0");
+        }
+        else {
+            params.put("parentId", "-1");
+            params.put("path", path);
+        }
+        HttpResponse response = HttpClientUtils.doGet(getUrl("/file/list"), params);
+        if (response.hasError())
+            throw new RuntimeException(response.getErrorMessage());
+        HttpResult result = response.getResult();
+        return result.getDataList(FileEntity.class);
     }
 
     /**
@@ -90,7 +134,7 @@ public class FileSysAdapter {
      * @return 文件实例
      */
     public static FileEntity upload(File file, String path) {
-        return null;
+        return upload(file, file.getName(), path);
     }
 
     /**
@@ -101,7 +145,18 @@ public class FileSysAdapter {
      * @return 文件实例
      */
     public static FileEntity upload(File file, String fileName, String path) {
-        return null;
+        String url = getUrl("/file/upload");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("fileName", fileName);
+        params.put("path", path);
+
+        HttpResponse response = HttpClientUtils.doUpload(url, file, params);
+        if (response.hasError())
+            throw new RuntimeException(response.getErrorMessage());
+        HttpResult result = response.getResult();
+        return result.getData(FileEntity.class);
     }
 
     /**
@@ -111,7 +166,7 @@ public class FileSysAdapter {
      * @return 文件实例
      */
     public static FileEntity upload(MultipartFile file, String path) {
-        return null;
+        return upload(file, file.getOriginalFilename(), path);
     }
 
     /**
@@ -122,7 +177,18 @@ public class FileSysAdapter {
      * @return 文件实例
      */
     public static FileEntity upload(MultipartFile file, String fileName, String path) {
-        return null;
+        String url = getUrl("/file/upload");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("fileName", fileName);
+        params.put("path", path);
+
+        HttpResponse response = HttpClientUtils.doUpload(url, file, params);
+        if (response.hasError())
+            throw new RuntimeException(response.getErrorMessage());
+        HttpResult result = response.getResult();
+        return result.getData(FileEntity.class);
     }
 
     /**

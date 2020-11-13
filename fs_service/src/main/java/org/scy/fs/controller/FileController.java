@@ -85,6 +85,7 @@ public class FileController extends BaseController {
      * @return 文件列表
      */
     @RequestMapping(value = "/file/info", method = RequestMethod.GET)
+    @ResponseBody
     public Object info(HttpServletRequest request) {
         String key = checkKey(HttpUtilsEx.getStringValue(request, "key"));
 
