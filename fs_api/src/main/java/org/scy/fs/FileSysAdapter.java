@@ -1,7 +1,9 @@
 package org.scy.fs;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.scy.common.ds.PageInfo;
+import org.scy.common.utils.FileUtilsEx;
 import org.scy.common.utils.HttpClientUtils;
 import org.scy.common.web.controller.HttpResponse;
 import org.scy.common.web.controller.HttpResult;
@@ -13,6 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,6 +54,8 @@ public class FileSysAdapter {
      * @return 符合条件的文件实例信息
      */
     public static List<FileEntity> find(SearchForm form, PageInfo pageInfo) {
+        String url = getUrl("/file/list");
+
         Map<String, String> params = new HashMap<String, String>();
         params.put("key", access_key);
         if (form != null) {
@@ -58,13 +64,9 @@ public class FileSysAdapter {
         if (pageInfo != null) {
             params.put("page", "" + pageInfo.getPage());
         }
-        HttpResponse response = HttpClientUtils.doGet(getUrl("/file/list"), params);
-        if (response.hasError())
-            throw new RuntimeException(response.getErrorMessage());
-        HttpResult result = response.getResult();
-        if (pageInfo != null && result.getPageInfo() != null)
-            pageInfo.setTotal(result.getPageInfo().getTotal());
-        return result.getDataList(FileEntity.class);
+
+        HttpResponse response = HttpClientUtils.doGet(url, params);
+        return getList(response, pageInfo);
     }
 
     /**
@@ -74,14 +76,13 @@ public class FileSysAdapter {
      */
     public static FileEntity file(String uuid) {
         if (StringUtils.isNotBlank(uuid)) {
+            String url = getUrl("/file/info/" + uuid);
+
             Map<String, String> params = new HashMap<String, String>();
             params.put("key", access_key);
-            String url = getUrl("/file/info/" + uuid);
+
             HttpResponse response = HttpClientUtils.doGet(url, params);
-            if (response.hasError())
-                throw new RuntimeException(response.getErrorMessage());
-            HttpResult result = response.getResult();
-            return result.getData(FileEntity.class);
+            return getOne(response);
         }
         return null;
     }
@@ -94,14 +95,15 @@ public class FileSysAdapter {
     public static List<FileEntity> files(String[] uuids) {
         if (uuids == null || uuids.length == 0)
             return new ArrayList<FileEntity>();
+
+        String url = getUrl("/file/info");
+
         Map<String, String> params = new HashMap<String, String>();
         params.put("key", access_key);
         params.put("uuids", StringUtils.join(uuids, ","));
-        HttpResponse response = HttpClientUtils.doGet(getUrl("/file/info"), params);
-        if (response.hasError())
-            throw new RuntimeException(response.getErrorMessage());
-        HttpResult result = response.getResult();
-        return result.getDataList(FileEntity.class);
+
+        HttpResponse response = HttpClientUtils.doGet(url, params);
+        return getList(response);
     }
 
     /**
@@ -110,6 +112,8 @@ public class FileSysAdapter {
      * @return 该目录下的文件实例列表
      */
     public static List<FileEntity> dir(String path) {
+        String url = getUrl("/file/list");
+
         Map<String, String> params = new HashMap<String, String>();
         params.put("key", access_key);
         params.put("size", "1000"); // 限制文件数
@@ -120,11 +124,9 @@ public class FileSysAdapter {
             params.put("parentId", "-1");
             params.put("path", path);
         }
-        HttpResponse response = HttpClientUtils.doGet(getUrl("/file/list"), params);
-        if (response.hasError())
-            throw new RuntimeException(response.getErrorMessage());
-        HttpResult result = response.getResult();
-        return result.getDataList(FileEntity.class);
+
+        HttpResponse response = HttpClientUtils.doGet(url, params);
+        return getList(response);
     }
 
     /**
@@ -153,10 +155,7 @@ public class FileSysAdapter {
         params.put("path", path);
 
         HttpResponse response = HttpClientUtils.doUpload(url, file, params);
-        if (response.hasError())
-            throw new RuntimeException(response.getErrorMessage());
-        HttpResult result = response.getResult();
-        return result.getData(FileEntity.class);
+        return getOne(response);
     }
 
     /**
@@ -185,29 +184,111 @@ public class FileSysAdapter {
         params.put("path", path);
 
         HttpResponse response = HttpClientUtils.doUpload(url, file, params);
-        if (response.hasError())
-            throw new RuntimeException(response.getErrorMessage());
-        HttpResult result = response.getResult();
-        return result.getData(FileEntity.class);
+        return getOne(response);
     }
 
     /**
      * 下载文件
      * @param uuid 想要下载的文件唯一编号
-     * @return 文件流
+     * @param output 输出流
      */
-    public static OutputStream download(String uuid) {
-        return null;
+    public static void download(String uuid, OutputStream output) {
+        if (StringUtils.isBlank(uuid))
+            return;
+
+        String url = getUrl("/file/download");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("uuid", uuid);
+
+        HttpResponse response = HttpClientUtils.doDownload(url, params, output);
+        if (response.hasError())
+            throw new RuntimeException(response.getErrorMessage());
+    }
+
+    /**
+     * 下载文件
+     * @param uuid 想要下载的文件唯一编号
+     * @param file 本地存储文件
+     * @throws IOException 异常
+     */
+    public static void download(String uuid, File file) throws IOException {
+        if (StringUtils.isBlank(uuid))
+            return;
+
+        FileUtilsEx.makeDirectory(file.getAbsolutePath());
+
+        OutputStream output = null;
+        try {
+            output = new FileOutputStream(file);
+            download(uuid, output);
+        } finally {
+            IOUtils.closeQuietly(output);
+        }
+    }
+
+    /**
+     * 下载文件
+     * @param uuid 想要下载的文件唯一编号
+     * @param destFile 本地存储文件路径
+     * @throws IOException 异常
+     */
+    public static void download(String uuid, String destFile) throws IOException {
+        download(uuid, new File(destFile));
     }
 
     /**
      * 下载多个文件，并打包成zip文件
      * @param uuids 想要下载的文件唯一编号集
+     * @param output 输出流
      * @param zipFileName 打包的zip文件名称
-     * @return 文件流
      */
-    public static OutputStream download(String[] uuids, String zipFileName) {
-        return null;
+    public static void download(String[] uuids, OutputStream output, String zipFileName) {
+        if (uuids == null || uuids.length == 0)
+            return;
+
+        String url = getUrl("/file/download");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("uuids", StringUtils.join(uuids, ","));
+        params.put("fileName", zipFileName);
+
+        HttpResponse response = HttpClientUtils.doDownload(url, params, output);
+        if (response.hasError())
+            throw new RuntimeException(response.getErrorMessage());
+    }
+
+    /**
+     * 下载多个文件，并打包成zip文件
+     * @param uuids 想要下载的文件唯一编号
+     * @param zipFile 本地存储文件
+     * @throws IOException 异常
+     */
+    public static void download(String[] uuids, File zipFile) throws IOException {
+        if (uuids == null || uuids.length == 0)
+            return;
+
+        FileUtilsEx.makeDirectory(zipFile.getAbsolutePath());
+
+        OutputStream output = null;
+        try {
+            output = new FileOutputStream(zipFile);
+            download(uuids, output, zipFile.getName());
+        } finally {
+            IOUtils.closeQuietly(output);
+        }
+    }
+
+    /**
+     * 下载多个文件，并打包成zip文件
+     * @param uuids 想要下载的文件唯一编号
+     * @param zipFileName 本地存储文件
+     * @throws IOException 异常
+     */
+    public static void download(String[] uuids, String zipFileName) throws IOException {
+        download(uuids, new File(zipFileName));
     }
 
     /**
@@ -216,6 +297,19 @@ public class FileSysAdapter {
      * @return 删除的文件信息
      */
     public static FileEntity delete(String uuid) {
+        if (StringUtils.isBlank(uuid))
+            return null;
+
+        String url = getUrl("/file/delete");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("uuid", uuid);
+
+        HttpResponse response = HttpClientUtils.doPost(url, params);
+        List<FileEntity> entities = getList(response);
+        if (entities != null && entities.size() > 0)
+            return entities.get(0);
         return null;
     }
 
@@ -225,7 +319,17 @@ public class FileSysAdapter {
      * @return 返回删除的文件信息
      */
     public static List<FileEntity> delete(String[] uuids) {
-        return null;
+        if (uuids == null || uuids.length == 0)
+            return new ArrayList<FileEntity>();
+
+        String url = getUrl("/file/delete");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("uuids", StringUtils.join(uuids, ","));
+
+        HttpResponse response = HttpClientUtils.doPost(url, params);
+        return getList(response);
     }
 
     /**
@@ -236,7 +340,16 @@ public class FileSysAdapter {
      * @return 返回删除的文件及目录
      */
     public static List<FileEntity> delete(String path, boolean includeSubDir, boolean includeFile) {
-        return null;
+        String url = getUrl("/file/delete");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("path", path);
+        params.put("includeSubDir", includeSubDir ? "true" : "false");
+        params.put("includeFile", includeFile ? "true" : "false");
+
+        HttpResponse response = HttpClientUtils.doPost(url, params);
+        return getList(response);
     }
 
     /**
@@ -246,6 +359,20 @@ public class FileSysAdapter {
      * @return 移动后的文件
      */
     public static FileEntity moveFile(String uuid, String toPath) {
+        if (StringUtils.isBlank(uuid))
+            return null;
+
+        String url = getUrl("/file/move");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("uuid", uuid);
+        params.put("toPath", toPath);
+
+        HttpResponse response = HttpClientUtils.doPost(url, params);
+        List<FileEntity> entities = getList(response);
+        if (entities != null && entities.size() > 0)
+            return entities.get(0);
         return null;
     }
 
@@ -256,7 +383,18 @@ public class FileSysAdapter {
      * @return 移动后的文件
      */
     public static List<FileEntity> moveFiles(String[] uuids, String toPath) {
-        return null;
+        if (uuids == null || uuids.length == 0)
+            return new ArrayList<FileEntity>();
+
+        String url = getUrl("/file/move");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("uuids", StringUtils.join(uuids, ","));
+        params.put("toPath", toPath);
+
+        HttpResponse response = HttpClientUtils.doPost(url, params);
+        return getList(response);
     }
 
     /**
@@ -266,6 +404,17 @@ public class FileSysAdapter {
      * @return 移动后的文件或目录
      */
     public static FileEntity moveDir(String fromPath, String toPath) {
+        String url = getUrl("/file/move");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("path", fromPath);
+        params.put("toPath", toPath);
+
+        HttpResponse response = HttpClientUtils.doPost(url, params);
+        List<FileEntity> entities = getList(response);
+        if (entities != null && entities.size() > 0)
+            return entities.get(0);
         return null;
     }
 
@@ -273,6 +422,27 @@ public class FileSysAdapter {
         if (server_url == null)
             throw new RuntimeException("未知文件服务");
         return server_url + path;
+    }
+
+    private static FileEntity getOne(HttpResponse response) {
+        if (response.hasError())
+            throw new RuntimeException(response.getErrorMessage());
+        HttpResult result = response.getResult();
+        return result.getData(FileEntity.class);
+    }
+
+    private static List<FileEntity> getList(HttpResponse response) {
+        return getList(response, null);
+    }
+
+    private static List<FileEntity> getList(HttpResponse response, PageInfo pageInfo) {
+        if (response.hasError())
+            throw new RuntimeException(response.getErrorMessage());
+        HttpResult result = response.getResult();
+        if (pageInfo != null && result.getPageInfo() != null) {
+            pageInfo.setTotal(result.getPageInfo().getTotal());
+        }
+        return result.getDataList(FileEntity.class);
     }
 
 }

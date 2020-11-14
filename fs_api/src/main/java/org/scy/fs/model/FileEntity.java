@@ -1,5 +1,6 @@
 package org.scy.fs.model;
 
+import com.alibaba.fastjson.annotation.JSONField;
 import org.scy.common.web.model.BaseModel;
 
 /**
@@ -79,6 +80,7 @@ public class FileEntity extends BaseModel {
         this.parentIds = parentIds;
     }
 
+    @JSONField(serialize = false)
     public boolean isDir() {
         return directory == 1;
     }

@@ -282,7 +282,7 @@ public class FileController extends BaseController {
 
         String uuids = HttpUtilsEx.getStringValue(request, "uuids");
         if (StringUtils.isNotBlank(uuids)) {
-            String[] _uuids = StringUtils.split(uuid, ",");
+            String[] _uuids = StringUtils.split(uuids, ",");
             fileEntities.addAll(fileService.moveFiles(key, _uuids, toPath));
         }
 

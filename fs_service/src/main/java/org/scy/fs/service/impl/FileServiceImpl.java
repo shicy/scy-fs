@@ -1,6 +1,7 @@
 package org.scy.fs.service.impl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.scy.common.Const;
 import org.scy.common.ds.PageInfo;
 import org.scy.common.ds.query.Oper;
 import org.scy.common.ds.query.Selector;
@@ -98,6 +99,7 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         model.setSize(file.getSize());
         model.setDirectory((short)0);
         model.setCreateDate(new Date());
+        model.setState(Const.ENABLED);
 
         FileEntityModel parent = getByPath(key, path, true);
         model.setParentId(parent != null ? parent.getId() : 0);
@@ -286,6 +288,7 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         model.setCreateDate(new Date());
         model.setParentId(parent != null ? parent.getId() : 0);
         model.setParentIds(getParentIds(parent));
+        model.setState(Const.ENABLED);
         entityMapper.add(model);
         return model;
     }
@@ -306,8 +309,9 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
             for (FileEntityModel model: models) {
                 if (model.isDir()) {
                     if (includeSubDir) {
-                        deleteCount += 1;
                         deleteModels.addAll(deleteDir(model, true, includeFile));
+                        if (model.getState() == Const.DISABLED)
+                            deleteCount += 1;
                     }
                 }
                 else if (includeFile) {
@@ -320,6 +324,7 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         }
 
         if (models == null || deleteCount == models.size()) {
+            parent.setState(Const.DISABLED);
             entityMapper.delete(parent);
             deleteModels.add(parent);
         }
@@ -346,16 +351,19 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
      * @param parentIds 所有上上级目录编号
      */
     private FileEntityModel move(FileEntityModel model, int parentId, String parentIds) {
-        model.setParentId(parentId);
-        model.setParentIds(parentIds);
-        entityMapper.updateParent(model);
-        if (model.isDir()) {
-            List<FileEntityModel> models = entityMapper.getByParentId(model.getKey(), model.getId());
-            if (models != null && models.size() > 0) {
-                parentId = model.getId();
-                parentIds = getParentIds(model);
-                for (FileEntityModel _model: models) {
-                    move(_model, parentId, parentIds);
+        if (model.getId() != parentId &&
+                !StringUtils.contains(parentIds, "," + model.getId() + ",")) {
+            model.setParentId(parentId);
+            model.setParentIds(parentIds);
+            entityMapper.updateParent(model);
+            if (model.isDir()) {
+                List<FileEntityModel> models = entityMapper.getByParentId(model.getKey(), model.getId());
+                if (models != null && models.size() > 0) {
+                    parentId = model.getId();
+                    parentIds = getParentIds(model);
+                    for (FileEntityModel _model: models) {
+                        move(_model, parentId, parentIds);
+                    }
                 }
             }
         }
