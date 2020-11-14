@@ -234,18 +234,18 @@ public class FileSysAdapter {
     /**
      * 下载文件
      * @param uuid 想要下载的文件唯一编号
-     * @param file 本地存储文件
+     * @param destFile 本地存储文件
      * @throws IOException 异常
      */
-    public static void download(String uuid, File file) throws IOException {
+    public static void download(String uuid, File destFile) throws IOException {
         if (StringUtils.isBlank(uuid))
             return;
 
-        FileUtilsEx.makeDirectory(file.getAbsolutePath());
+        FileUtilsEx.makeDirectory(destFile.getAbsolutePath());
 
         OutputStream output = null;
         try {
-            output = new FileOutputStream(file);
+            output = new FileOutputStream(destFile);
             download(uuid, output);
         } finally {
             IOUtils.closeQuietly(output);
@@ -308,11 +308,11 @@ public class FileSysAdapter {
     /**
      * 下载多个文件，并打包成zip文件
      * @param uuids 想要下载的文件唯一编号
-     * @param zipFileName 本地存储文件
+     * @param zipFile 本地存储文件
      * @throws IOException 异常
      */
-    public static void download(String[] uuids, String zipFileName) throws IOException {
-        download(uuids, new File(zipFileName));
+    public static void download(String[] uuids, String zipFile) throws IOException {
+        download(uuids, new File(zipFile));
     }
 
     /**
