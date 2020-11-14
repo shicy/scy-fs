@@ -120,6 +120,35 @@ public class FileController extends BaseController {
     }
 
     /**
+     * 获取完整路径上的文件信息
+     * @param request 参数：
+     *   -param key 第三方key值
+     *   -param uuid 文件唯一编号
+     *   -param path 文件路径
+     * @return 路径上文件信息
+     */
+    @RequestMapping(value = "/file/path", method = RequestMethod.GET)
+    @ResponseBody
+    public Object getPath(HttpServletRequest request) {
+        String key = checkKey(HttpUtilsEx.getStringValue(request, "key"));
+
+        List<FileEntityModel> models = null;
+        String uuid = HttpUtilsEx.getStringValue(request, "uuid");
+        if (StringUtils.isNotBlank(uuid)) {
+            models = fileService.getFilePath(key, uuid);
+        }
+        else {
+            String path = HttpUtilsEx.getStringValue(request, "path");
+            if (StringUtils.isNotBlank(path))
+                models = fileService.getDirPath(key, path);
+        }
+
+        if (models == null)
+            models = new ArrayList<FileEntityModel>();
+        return HttpResult.ok(models);
+    }
+
+    /**
      * 上传
      * @param request 参数：
      *   -param key 第三方key值

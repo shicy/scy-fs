@@ -5,6 +5,7 @@ import org.scy.common.Const;
 import org.scy.common.ds.PageInfo;
 import org.scy.common.ds.query.Oper;
 import org.scy.common.ds.query.Selector;
+import org.scy.common.utils.ArrayUtilsEx;
 import org.scy.common.utils.StringUtilsEx;
 import org.scy.common.web.service.MybatisBaseService;
 import org.scy.fs.form.SearchForm;
@@ -199,6 +200,33 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
             return move(entityModel, getByPath(key, toPath, true));
         }
         return null;
+    }
+
+    @Override
+    public List<FileEntityModel> getFilePath(String key, String uuid) {
+        FileEntityModel entityModel = getByUuid(key, uuid);
+        if (entityModel == null)
+            return new ArrayList<FileEntityModel>();
+
+        String[] parentIds = StringUtils.split(entityModel.getParentIds(), ",");
+        int[] ids = ArrayUtilsEx.toPrimitiveInt(parentIds);
+        List<FileEntityModel> models = entityMapper.getByIds(ids);
+
+        List<FileEntityModel> entityModels = new ArrayList<FileEntityModel>();
+        for (int id: ids) {
+            for (FileEntityModel model: models) {
+                if (model.getId() == id)
+                    entityModels.add(model);
+            }
+        }
+        entityModels.add(entityModel);
+        return entityModels;
+    }
+
+    @Override
+    public List<FileEntityModel> getDirPath(String key, String path) {
+        String[] dirNames = FileManager.getPaths(path);
+        return getPathDirs(key, dirNames, false);
     }
 
     // ========================================================================

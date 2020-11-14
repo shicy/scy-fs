@@ -19,6 +19,15 @@
         limit 1
     </select>
 
+    <!-- getByIds -->
+    <select id="getByIds" resultType="FileEntityModel">
+        select * from `entity`
+        where id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
     <!-- getByUuids -->
     <select id="getByUuids" resultType="FileEntityModel">
         select * from `entity`

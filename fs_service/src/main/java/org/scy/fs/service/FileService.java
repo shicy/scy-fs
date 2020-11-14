@@ -101,4 +101,20 @@ public interface FileService {
      */
     FileEntityModel moveDir(String key, String fromPath, String toPath);
 
+    /**
+     * 获取文件路径
+     * @param key 第三方key
+     * @param uuid 文件唯一编号
+     * @return 完整路径信息
+     */
+    List<FileEntityModel> getFilePath(String key, String uuid);
+
+    /**
+     * 获取目录文件路径
+     * @param key 第三方key
+     * @param path 路径，如：/a/b
+     * @return 完整路径信息
+     */
+    List<FileEntityModel> getDirPath(String key, String path);
+
 }

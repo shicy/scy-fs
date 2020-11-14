@@ -18,6 +18,8 @@ public interface FileEntityMapper extends BaseMapper<FileEntityModel> {
 
     FileEntityModel getDirByName(@Param("key") String key, @Param("name") String name, @Param("parentId") int parentId);
 
+    List<FileEntityModel> getByIds(@Param("ids") int[] ids);
+
     List<FileEntityModel> getByUuids(@Param("uuids") String[] uuids);
 
     List<FileEntityModel> getByParentId(@Param("key") String key, @Param("parentId") int parentId);

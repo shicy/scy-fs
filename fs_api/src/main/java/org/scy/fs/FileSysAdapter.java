@@ -418,6 +418,58 @@ public class FileSysAdapter {
         return null;
     }
 
+    /**
+     * 获取文件路径
+     * @param uuid 文件唯一编号
+     * @return 文件路径
+     */
+    public static String filePath(String uuid) {
+        List<FileEntity> entities = filePaths(uuid);
+        StringBuilder pathname = new StringBuilder();
+        for (FileEntity entity: entities) {
+            pathname.append("/").append(entity.getName());
+        }
+        return pathname.toString();
+    }
+
+    /**
+     * 获取文件路径
+     * @param uuid 文件唯一编号
+     * @return 文件路径信息
+     */
+    public static List<FileEntity> filePaths(String uuid) {
+        if (StringUtils.isBlank(uuid))
+            return new ArrayList<FileEntity>();
+
+        String url = getUrl("/file/path");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("uuid", uuid);
+
+        HttpResponse response = HttpClientUtils.doGet(url, params);
+        return getList(response);
+    }
+
+    /**
+     * 获取目录路径
+     * @param path 目录，如：/a/b
+     * @return 目录路径信息
+     */
+    public static List<FileEntity> dirPaths(String path) {
+        if (StringUtils.isBlank(path))
+            return new ArrayList<FileEntity>();
+
+        String url = getUrl("/file/path");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("path", path);
+
+        HttpResponse response = HttpClientUtils.doGet(url, params);
+        return getList(response);
+    }
+
     private static String getUrl(String path) {
         if (server_url == null)
             throw new RuntimeException("未知文件服务");
