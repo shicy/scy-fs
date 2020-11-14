@@ -10,7 +10,7 @@ public class TestUpload {
         TestInit.init();
 
         String uploadFile = "/mywork/temp/code.png";
-        FileEntity entity = FileSysAdapter.upload(new File(uploadFile), "/test/icons");
+        FileEntity entity = FileSysAdapter.upload(new File(uploadFile), "/temp/icons");
         if (entity != null)
             System.out.println("==> 上传成功：" + entity.getUuid());
     }

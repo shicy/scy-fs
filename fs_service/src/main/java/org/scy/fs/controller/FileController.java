@@ -149,6 +149,29 @@ public class FileController extends BaseController {
     }
 
     /**
+     * 修改文件信息
+     * @param key 第三方key值
+     * @param entity 文件信息
+     * @return 返回文件信息
+     */
+    @RequestMapping(value = "/file/update", method = RequestMethod.POST)
+    @ResponseBody
+    public Object update(@RequestParam("key") String key, @RequestBody FileEntity entity) {
+        checkKey(key);
+
+        if (entity == null)
+            return HttpResult.error(Const.MSG_CODE_PARAMMISSING, "缺少文件信息");
+
+        if (StringUtils.isBlank(entity.getUuid()))
+            return HttpResult.error(Const.MSG_CODE_PARAMINVALID, "缺少文件编号");
+
+        FileEntityModel model = fileService.update(key, entity);
+        if (model == null)
+            return HttpResult.error("文件不存在");
+        return HttpResult.ok(model);
+    }
+
+    /**
      * 上传
      * @param request 参数：
      *   -param key 第三方key值

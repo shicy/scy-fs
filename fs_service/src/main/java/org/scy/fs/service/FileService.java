@@ -2,6 +2,7 @@ package org.scy.fs.service;
 
 import org.scy.common.ds.PageInfo;
 import org.scy.fs.form.SearchForm;
+import org.scy.fs.model.FileEntity;
 import org.scy.fs.model.FileEntityModel;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -47,6 +48,14 @@ public interface FileService {
      * @return 文件实例
      */
     FileEntityModel add(String key, MultipartFile file, String fileName, String path);
+
+    /**
+     * 修改文件信息
+     * @param key 第三方key
+     * @param entity 最新的文件信息
+     * @return 返回文件信息
+     */
+    FileEntityModel update(String key, FileEntity entity);
 
     /**
      * 删除文件

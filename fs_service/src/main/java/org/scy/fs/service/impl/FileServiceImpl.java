@@ -12,6 +12,7 @@ import org.scy.fs.form.SearchForm;
 import org.scy.fs.manager.FileManager;
 import org.scy.fs.mapper.FileEntityMapper;
 import org.scy.fs.mapper.RegisterMapper;
+import org.scy.fs.model.FileEntity;
 import org.scy.fs.model.FileEntityModel;
 import org.scy.fs.model.RegisterModel;
 import org.scy.fs.service.FileService;
@@ -116,6 +117,27 @@ public class FileServiceImpl extends MybatisBaseService implements FileService {
         FileManager.save(model, file);
 
         return model;
+    }
+
+    @Override
+    public FileEntityModel update(String key, FileEntity entity) {
+        FileEntityModel model = getByUuid(key, entity.getUuid());
+        if (model != null) {
+            String name = entity.getName();
+            if (StringUtils.isNotBlank(name)) {
+                String ext = StringUtils.trimToEmpty(entity.getExt());
+                if (StringUtils.isBlank(ext))
+                    ext = StringUtils.substringAfterLast(name, ".");
+                if (ext.length() > 20)
+                    ext = ext.substring(0, 20);
+                model.setName(name);
+                model.setExt(ext);
+            }
+            model.setUpdateDate(new Date());
+            entityMapper.update(model);
+            return model;
+        }
+        return null;
     }
 
     @Override

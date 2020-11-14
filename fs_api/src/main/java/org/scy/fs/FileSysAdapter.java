@@ -130,6 +130,30 @@ public class FileSysAdapter {
     }
 
     /**
+     * 修改文件信息
+     * @param entity 文件信息
+     * @return 文件信息
+     */
+    public static FileEntity update(FileEntity entity) {
+        String url = getUrl("/file/update?key=" + access_key);
+        HttpResponse response = HttpClientUtils.doJson(url, entity);
+        return getOne(response);
+    }
+
+    /**
+     * 修改文件名称
+     * @param uuid 想要修改的文件唯一编号
+     * @param name 新的文件名称
+     * @return 文件信息
+     */
+    public static FileEntity updateName(String uuid, String name) {
+        FileEntity entity = new FileEntity();
+        entity.setUuid(uuid);
+        entity.setName(name);
+        return update(entity);
+    }
+
+    /**
      * 上传文件
      * @param file 想要上传的文件，一个文件文件
      * @param path 文件存储目录

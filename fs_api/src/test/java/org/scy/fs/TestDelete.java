@@ -7,7 +7,7 @@ public class TestDelete {
     public static void main(String[] args) {
         TestInit.init();
 
-        String uuid = "womf5vpi6sq5yclv5shqdhjza3ofwdee";
+        String uuid = "3lgofdlwzgjdoyqqjqo8setopufyszwv";
         FileEntity entity = FileSysAdapter.delete(uuid);
         if (entity != null)
             System.out.println("==>删除成功：" + entity.getName());
