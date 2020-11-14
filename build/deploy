@@ -37,18 +37,18 @@ echo -e done.
 
 # 部署
 echo -e "\n> 部署"
-docker stop scyfs
-docker rm scyfs
-docker rmi shicy/scyfs:${version}
+docker stop scy-fs
+docker rm scy-fs
+docker rmi shicy/scy-fs:${version}
 
-docker build -t shicy/scyfs:${version} .
+docker build -t shicy/scy-fs:${version} .
 docker run -itd \
     -p 12304:12304 \
-    -v /mnt/logs/scyfs:/mnt/app/logs \
+    -v /mnt/logs/scy-fs:/mnt/app/logs \
     -v /mnt/fstorage:/mnt/app/fstorage \
-    --name scyfs \
+    --name scy-fs \
     --network mynet \
     --ip 172.2.2.4 \
-    shicy/scyfs:${version}
+    shicy/scy-fs:${version}
 
 echo -e "\n> 完成！！"
