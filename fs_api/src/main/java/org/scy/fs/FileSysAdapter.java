@@ -14,10 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -208,6 +205,87 @@ public class FileSysAdapter {
         params.put("path", path);
 
         HttpResponse response = HttpClientUtils.doUpload(url, file, params);
+        return getOne(response);
+    }
+
+    /**
+     * 从远程先下载，再上传文件
+     * @param url 远程地址
+     * @param fileName 文件名
+     * @param path 文件存储目录
+     * @return 文件实例
+     */
+    public static FileEntity uploadFromUrl(final String url, String fileName, String path) throws IOException {
+        if (StringUtils.isBlank(fileName)) {
+            fileName = FileUtilsEx.getFileName(url);
+        }
+
+        InputStream input = null;
+        OutputStream output = null;
+        try {
+            PipedInputStream in = new PipedInputStream();
+            input = in;
+            final PipedOutputStream out = new PipedOutputStream(in);
+            output = out;
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    HttpResponse downloads = HttpClientUtils.doDownload(url, null, out);
+                    IOUtils.closeQuietly(out);
+                    if (downloads.hasError()) {
+                        throw new RuntimeException(downloads.getErrorMessage());
+                    }
+                }
+            }).start();
+
+            String uploadUrl = getUrl("/file/upload");
+
+            Map<String, String> params = new HashMap<String, String>();
+            params.put("key", access_key);
+            params.put("fileName", fileName);
+            params.put("path", path);
+
+            HttpResponse response = HttpClientUtils.doUpload(uploadUrl, input, fileName, params);
+            return getOne(response);
+        }
+        finally {
+            IOUtils.closeQuietly(input);
+            IOUtils.closeQuietly(output);
+        }
+    }
+
+    /**
+     * 从远程先下载，再上传文件，使用本地临时文件
+     */
+    public static FileEntity uploadFromUrl2(final String url, String fileName, String path) throws IOException {
+        if (StringUtils.isBlank(fileName)) {
+            fileName = FileUtilsEx.getFileName(url);
+        }
+
+        File tempFile = File.createTempFile("fsa", ".tmp");
+//        System.out.println("==========> file:" + tempFile.getAbsolutePath());
+
+        OutputStream output = null;
+        try {
+            output = new BufferedOutputStream(new FileOutputStream(tempFile));
+
+            HttpResponse downloads = HttpClientUtils.doDownload(url, null, output);
+            if (downloads.hasError())
+                throw new RuntimeException(downloads.getErrorMessage());
+        }
+        finally {
+            IOUtils.closeQuietly(output);
+        }
+
+        String uploadUrl = getUrl("/file/upload");
+
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("key", access_key);
+        params.put("fileName", fileName);
+        params.put("path", path);
+
+        HttpResponse response = HttpClientUtils.doUpload(uploadUrl, tempFile, fileName, params);
         return getOne(response);
     }
 

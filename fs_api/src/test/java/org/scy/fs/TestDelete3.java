@@ -9,7 +9,7 @@ public class TestDelete3 {
     public static void main(String[] args) {
         TestInit.init();
 
-        String path = "/娱乐";
+        String path = "/temp/img";
         List<FileEntity> entities = FileSysAdapter.delete(path, true, true);
         System.out.println("==> 删除记录数：" + entities.size());
         for (FileEntity entity: entities) {

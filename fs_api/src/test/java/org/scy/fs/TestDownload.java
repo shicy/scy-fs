@@ -9,7 +9,7 @@ public class TestDownload {
 
         try {
             String downloadFileName = "/mywork/temp/download/" + new Date().getTime() + ".png";
-            FileSysAdapter.download("tdnbz5sgd0khlm4bqpwcmcjkwhvthy9k", downloadFileName);
+            FileSysAdapter.download("wksjwhdzsjstn0fr2zvpbpi8tg8hixub", downloadFileName);
             System.out.println("==> 下载完成");
         } catch (Exception e) {
             e.printStackTrace();
